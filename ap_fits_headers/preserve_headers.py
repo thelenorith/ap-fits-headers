@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from astropy.io import fits
+from ap_common.fits import get_file_headers
 from xisf import XISF
 
 from . import config
@@ -23,40 +24,43 @@ logger = logging.getLogger(__name__)
 
 def extract_key_value_pairs(path: Path) -> Dict[str, str]:
     """
-    Extract key-value pairs from a file path.
+    Extract key-value pairs from a file path using ap-common's parsing logic.
 
     Key-value pairs are encoded in directory names and filenames using patterns like:
     - KEY_value (underscore separator)
     - KEY-value (hyphen separator)
 
+    Multiple key-value pairs can exist in a single directory name, e.g.:
+    - DATE_2026-01-20_INSTRUME_ATR585M_OFFSET_150
+
+    Uses ap-common's get_file_headers for parsing, then applies FITS-specific
+    uppercase normalization to keys.
+
     Args:
         path: Full path to the file
 
     Returns:
-        Dictionary mapping header keys to values extracted from the path
+        Dictionary mapping header keys (uppercase) to values extracted from the path
     """
+    # Use ap-common's path parsing logic (without normalization or special profile/object handling)
+    parsed = get_file_headers(
+        filename=str(path),
+        profileFromPath=False,
+        objectFromPath=False,
+        normalize=False,
+    )
+
+    # Remove the "filename" key that get_file_headers adds
+    parsed.pop("filename", None)
+
+    # Apply FITS-specific uppercase normalization to keys
     key_value_pairs: Dict[str, str] = {}
-
-    # Get all path components (directories and filename)
-    parts = path.parts
-
-    # Pattern to match key-value pairs: KEY_value or KEY-value
-    # Key must start with letter, can contain letters, numbers, underscores, hyphens
-    # Value can contain letters, numbers, underscores, hyphens, dots
-    pattern = re.compile(r"^([A-Za-z][A-Za-z0-9_-]+)[_-](.+)$")
-
-    for part in parts:
-        # Skip common directory names that aren't key-value pairs
-        if part in [".", "..", ""]:
-            continue
-
-        match = pattern.match(part)
-        if match:
-            key = match.group(1).upper()  # FITS keywords are typically uppercase
-            value = match.group(2)
-
-            # Later path components take precedence (overwrite if key already exists)
-            key_value_pairs[key] = value
+    for key, value in parsed.items():
+        # Convert key to uppercase for FITS convention
+        key_upper = key.upper()
+        # Convert value to string and strip whitespace to avoid trailing spaces
+        value_str = str(value).strip() if value is not None else ""
+        key_value_pairs[key_upper] = value_str
 
     return key_value_pairs
 
@@ -397,7 +401,7 @@ def preserve_headers(
 
     # Print summary
     logger.info(
-        f"\nSummary: {files_processed} processed, "
+        f"Summary: {files_processed} processed, "
         f"{files_updated} updated, "
         f"{files_no_updates} no updates needed, "
         f"{files_failed} failed"

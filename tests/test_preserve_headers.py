@@ -60,11 +60,33 @@ class TestExtractKeyValuePairs:
         result = preserve_headers.extract_key_value_pairs(path)
         assert result == {}
 
-    def test_extract_later_path_takes_precedence(self):
-        """Test that later path components take precedence."""
+    def test_extract_first_path_takes_precedence(self):
+        """Test that first path components take precedence (ap-common behavior)."""
         path = Path("/root/KEY_first/KEY_second/file.fits")
         result = preserve_headers.extract_key_value_pairs(path)
-        assert result["KEY"] == "second"  # Later occurrence takes precedence
+        assert (
+            result["KEY"] == "first"
+        )  # First occurrence takes precedence (ap-common behavior)
+
+    def test_extract_multiple_pairs_in_single_directory(self):
+        """Test extraction of multiple key-value pairs in a single directory name."""
+        path = Path("/root/DATE_2026-01-20_INSTRUME_ATR585M_OFFSET_150/file.fits")
+        result = preserve_headers.extract_key_value_pairs(path)
+        assert "DATE" in result
+        assert result["DATE"] == "2026-01-20"
+        assert "INSTRUME" in result
+        assert result["INSTRUME"] == "ATR585M"
+        assert "OFFSET" in result
+        assert result["OFFSET"] == "150"
+
+    def test_extract_multiple_pairs_with_hyphen_separator(self):
+        """Test extraction of multiple key-value pairs with hyphen separators."""
+        path = Path("/root/DATE-2026-01-20_INSTRUME-ATR585M/file.fits")
+        result = preserve_headers.extract_key_value_pairs(path)
+        assert "DATE" in result
+        assert result["DATE"] == "2026-01-20"
+        assert "INSTRUME" in result
+        assert result["INSTRUME"] == "ATR585M"
 
 
 class TestShouldIncludeHeader:
