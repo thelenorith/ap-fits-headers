@@ -374,11 +374,23 @@ def main() -> None:
         action="store_true",
         help="Perform dry run without actually modifying files",
     )
+    parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Suppress progress output",
+    )
 
     args = parser.parse_args()
 
     # Configure logging
-    log_level = logging.DEBUG if args.debug else logging.INFO
+    # --quiet takes precedence over --debug
+    if args.quiet:
+        log_level = logging.WARNING
+    elif args.debug:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
     logging.basicConfig(
         level=log_level,
         format="%(levelname)s: %(message)s",
