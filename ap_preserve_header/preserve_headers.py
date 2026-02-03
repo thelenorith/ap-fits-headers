@@ -385,12 +385,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Configure logging using ap-common's setup_logging
-    # --quiet takes precedence over --debug
-    if args.quiet:
-        setup_logging(name=__name__, debug=False)
-        logging.getLogger(__name__).setLevel(logging.WARNING)
-    else:
-        setup_logging(name=__name__, debug=args.debug)
+    setup_logging(name=__name__, debug=args.debug, quiet=args.quiet)
 
     preserve_headers(
         root_dir=args.root_dir,

@@ -472,9 +472,8 @@ class TestMain:
             dryrun=False,
         )
         mock_setup_logging.assert_called_once_with(
-            name="ap_preserve_header.preserve_headers", debug=False
+            name="ap_preserve_header.preserve_headers", debug=False, quiet=True
         )
-        mock_logger.setLevel.assert_called_once_with(logging.WARNING)
 
     @patch("ap_preserve_header.preserve_headers.preserve_headers")
     @patch("ap_preserve_header.preserve_headers.setup_logging")
@@ -498,9 +497,8 @@ class TestMain:
             dryrun=False,
         )
         mock_setup_logging.assert_called_once_with(
-            name="ap_preserve_header.preserve_headers", debug=False
+            name="ap_preserve_header.preserve_headers", debug=False, quiet=True
         )
-        mock_logger.setLevel.assert_called_once_with(logging.WARNING)
 
     @patch("ap_preserve_header.preserve_headers.preserve_headers")
     @patch("ap_preserve_header.preserve_headers.setup_logging")
@@ -532,9 +530,8 @@ class TestMain:
             include_headers=["CAMERA"],
             dryrun=False,
         )
-        # --quiet should take precedence, so setup_logging is called with debug=False
-        # and logger level is set to WARNING
+        # --debug takes precedence over --quiet in the new implementation
+        # Both flags are passed to setup_logging, which will use DEBUG level
         mock_setup_logging.assert_called_once_with(
-            name="ap_preserve_header.preserve_headers", debug=False
+            name="ap_preserve_header.preserve_headers", debug=True, quiet=True
         )
-        mock_logger.setLevel.assert_called_once_with(logging.WARNING)
